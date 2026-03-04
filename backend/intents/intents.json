@@ -1,150 +1,126 @@
 [
   {
     "intent": "get_agent_details",
-    "examples": [
-      "show me details of agent {email}",
-      "who is {agentid}",
-      "find agent by name {name}",
-      "agent details for {email}",
-      "show agent {agentid}"
-    ],
     "collection": "agents",
-    "query": { "$or": [{"UserName": "{param}"}, {"AgentID": "{param}"}, {"Name": {"$regex": "{param}", "$options": "i"}}] }
+    "query": { "$or": [{"UserName": "{param}"}, {"AgentID": "{param}"}, {"Name": {"$regex": "{param}", "$options": "i"}}] },
+    "template": "single"
   },
   {
     "intent": "get_agent_company",
-    "examples": [
-      "what company does {name} work for",
-      "which company is {email} from",
-      "company of agent {name}"
-    ],
     "collection": "agents",
     "query": { "$or": [{"UserName": "{param}"}, {"Name": {"$regex": "{param}", "$options": "i"}}] },
-    "projection": { "Name": 1, "Comp_Name": 1, "UserName": 1 }
+    "projection": { "Name": 1, "Comp_Name": 1, "UserName": 1 },
+    "template": "{Name} works for {Comp_Name}."
   },
   {
     "intent": "get_agents_by_nationality",
-    "examples": [
-      "show all agents from {country}",
-      "list agents from {country}",
-      "agents in {country}",
-      "how many agents from {country}"
-    ],
     "collection": "agents",
-    "query": { "Nationality": {"$regex": "{param}", "$options": "i"} }
+    "query": { "Nationality": {"$regex": "{param}", "$options": "i"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
   },
   {
     "intent": "get_agents_by_company",
-    "examples": [
-      "list agents by company {company}",
-      "show agents of {company}",
-      "agents working for {company}",
-      "how many agents does {company} have"
-    ],
     "collection": "agents",
-    "query": { "Comp_Name": {"$regex": "{param}", "$options": "i"} }
+    "query": { "Comp_Name": {"$regex": "{param}", "$options": "i"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
   },
   {
     "intent": "get_agent_last_login",
-    "examples": [
-      "when did {agent} last login",
-      "last login of {agent}",
-      "login time for {agent}",
-      "when was {agent} active"
-    ],
     "collection": "agentlogins",
     "query": { "AGENTID": "{param}" },
     "sort": { "LOGINDATE": -1 },
-    "limit": 1
+    "limit": 1,
+    "template": "{AGENTID} last logged in on {LOGINDATE}."
   },
   {
     "intent": "get_total_agents",
-    "examples": [
-      "how many total agents",
-      "total number of agents",
-      "count all agents",
-      "how many agents are there"
-    ],
     "collection": "agents",
     "query": {},
-    "count": true
+    "count": true,
+    "template": "There are {count} agents in total."
   },
   {
     "intent": "get_agents_by_date",
-    "examples": [
-      "show agents created in {month} {year}",
-      "agents registered in {year}",
-      "who joined in {month}",
-      "agents created this year"
-    ],
     "collection": "agents",
-    "query": { "CreatedDate": {"$gte": "{startDate}", "$lte": "{endDate}"} }
+    "query": { "CreatedDate": {"$gte": "{startDate}", "$lte": "{endDate}"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
   },
   {
     "intent": "get_recent_logins",
-    "examples": [
-      "who logged in today",
-      "show recent logins",
-      "who was the last agent to login",
-      "latest logins"
-    ],
     "collection": "agentlogins",
     "query": {},
     "sort": { "LOGINDATE": -1 },
-    "limit": 10
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
   },
   {
     "intent": "get_logins_by_date",
-    "examples": [
-      "who logged in this week",
-      "who logged in this month",
-      "show logins in {month} {year}",
-      "logins between {date1} and {date2}"
-    ],
     "collection": "agentlogins",
     "query": { "LOGINDATE": {"$gte": "{startDate}", "$lte": "{endDate}"} },
-    "sort": { "LOGINDATE": -1 }
+    "sort": { "LOGINDATE": -1 },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
   },
   {
     "intent": "get_inactive_agents",
-    "examples": [
-      "which agents have not logged in for 30 days",
-      "show inactive agents",
-      "agents not active since last month",
-      "who hasn't logged in for 6 months"
-    ],
     "collection": "agentlogins",
     "aggregate": [
       { "$group": { "_id": "$AGENTID", "lastLogin": { "$max": "$LOGINDATE" } } },
       { "$match": { "lastLogin": { "$lt": "{dateThreshold}" } } },
       { "$lookup": { "from": "agents", "localField": "_id", "foreignField": "UserName", "as": "agentInfo" } }
-    ]
+    ],
+    "template": "list"
+  },
+  {
+    "intent": "get_oldest_company",
+    "collection": "agents",
+    "query": { "Date_establishment": { "$exists": true, "$ne": null } },
+    "sort": { "Date_establishment": 1 },
+    "limit": 1,
+    "template": "{Comp_Name} was established first on {Date_establishment}."
+  },
+  {
+    "intent": "get_newest_company",
+    "collection": "agents",
+    "query": { "Date_establishment": { "$exists": true, "$ne": null } },
+    "sort": { "Date_establishment": -1 },
+    "limit": 1,
+    "template": "{Comp_Name} was established most recently on {Date_establishment}."
   },
   {
     "intent": "get_all_companies",
-    "examples": [
-      "list all companies",
-      "show all companies registered",
-      "how many companies are there"
-    ],
     "collection": "agents",
     "query": {},
-    "distinct": "Comp_Name"
+    "distinct": "Comp_Name",
+    "template": "Found {count} companies: {list}"
+  },
+  {
+    "intent": "get_agents_by_email_domain",
+    "collection": "agents",
+    "query": { "UserName": {"$regex": "@{param}", "$options": "i"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
   },
   {
     "intent": "search_agent",
-    "examples": [
-      "search agent by email {email}",
-      "find agents with {keyword}",
-      "search for {text}",
-      "find agent {name}"
-    ],
     "collection": "agents",
     "query": { "$or": [
       {"UserName": {"$regex": "{param}", "$options": "i"}},
       {"Name": {"$regex": "{param}", "$options": "i"}},
       {"Comp_Name": {"$regex": "{param}", "$options": "i"}},
       {"AgentID": {"$regex": "{param}", "$options": "i"}}
-    ]}
+    ]},
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
   }
 ]

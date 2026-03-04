@@ -1,9 +1,23 @@
 export const extractParameters = (userMessage) => {
     const params = {};
     
+    // Extract pagination
+    const pageMatch = userMessage.match(/page\s+(\d+)/i);
+    if (pageMatch) params.page = parseInt(pageMatch[1]);
+    
+    const limitMatch = userMessage.match(/(?:show|first|next)\s+(\d+)/i);
+    if (limitMatch) params.limit = parseInt(limitMatch[1]);
+    
+    if (userMessage.match(/\b(next|more)\b/i)) params.nextPage = true;
+    if (userMessage.match(/\b(prev|previous|back)\b/i)) params.prevPage = true;
+    
     // Extract email
     const emailMatch = userMessage.match(/[\w.-]+@[\w.-]+\.\w+/);
     if (emailMatch) params.param = emailMatch[0];
+    
+    // Extract email domain (gmail, yahoo, etc.)
+    const domainMatch = userMessage.match(/\b(gmail|yahoo|hotmail|outlook|mail)\b/i);
+    if (domainMatch && !emailMatch) params.param = domainMatch[0];
     
     // Extract dates
     const dateMatch = userMessage.match(/(\d{1,2}[-/]\d{1,2}[-/]\d{4})/);

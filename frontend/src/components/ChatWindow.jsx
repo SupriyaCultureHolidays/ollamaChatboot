@@ -12,13 +12,23 @@ export default function ChatWindow() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, loading]);
 
+    const handlePageChange = (direction) => {
+        send(direction === 'next' ? 'show next' : 'show previous');
+    };
+
     return (
         <div className="chat-window">
             <div className="header">
                 <h2>🤖 Agent Assistant</h2>
             </div>
             <div className="messages">
-                {messages.map((msg, i) => <MessageBubble key={i} message={msg} />)}
+                {messages.map((msg, i) => (
+                    <MessageBubble 
+                        key={i} 
+                        message={msg} 
+                        onPageChange={handlePageChange}
+                    />
+                ))}
                 {loading && <TypingIndicator />}
                 <div ref={messagesEndRef} />
             </div>

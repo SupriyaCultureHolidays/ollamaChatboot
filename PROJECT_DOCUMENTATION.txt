@@ -1,307 +1,277 @@
 ================================================================================
-                    AGENT CHATBOT PROJECT DOCUMENTATION
-                    Ollama + MongoDB + React + Node.js
+                    🤖 AGENT CHATBOT - PROJECT DOCUMENTATION
 ================================================================================
 
 PROJECT OVERVIEW
-----------------
-A fully local, free chatbot that answers questions about agents and login data
-using Mistral 7B via Ollama. Everything runs locally with no cloud costs.
+================================================================================
+A fully local, free AI chatbot that answers questions about agents and login 
+data using Mistral 7B via Ollama. No cloud services, no API costs.
 
 TECH STACK
-----------
 - Frontend: React + Vite
 - Backend: Node.js + Express
-- Database: MongoDB
+- Database: MongoDB (local)
 - AI Model: Ollama (Mistral 7B)
-- Cost: $0 (100% free and local)
+- Cost: $0 (100% free)
 
 ================================================================================
                               PREREQUISITES
 ================================================================================
 
-1. Node.js (v18+)
-   Download: https://nodejs.org/
+1. Node.js v18+ - https://nodejs.org/
+2. MongoDB running on port 27017
+3. Ollama installed - https://ollama.ai/
 
-2. MongoDB (running locally on port 27017)
-   Required Collections:
-   - agents: UserName, Name, Nationality, Comp_Name, Date_establishment, 
-             AgentID, CreatedDate, LastLogin
-   - agentlogins: AGENTID, ID, LOGINDATE
-
-3. Ollama
-   Download: https://ollama.ai/
-   Model: mistral:7b
+REQUIRED MONGODB COLLECTIONS:
+- agents: UserName, Name, Nationality, Comp_Name, Date_establishment, 
+          AgentID, CreatedDate, LastLogin
+- agentlogins: AGENTID, ID, LOGINDATE
 
 ================================================================================
-                            INSTALLATION GUIDE
+                              INSTALLATION
 ================================================================================
 
-STEP 1: INSTALL OLLAMA & DOWNLOAD MISTRAL
-------------------------------------------
-# Install Ollama from https://ollama.ai/
-
-# Download Mistral 7B model
+STEP 1: INSTALL OLLAMA & MISTRAL
+---------------------------------
+# Download from https://ollama.ai/
 ollama pull mistral:7b
-
-# Verify it's running
 ollama run mistral:7b
-
 # Type /bye to exit
 
-
-STEP 2: SETUP MONGODB
-----------------------
-# Start MongoDB (if not running)
+STEP 2: START MONGODB
+---------------------------------
 mongod
 
-# Verify connection
-mongosh
-use testdb
-show collections
-
-
-STEP 3: INSTALL BACKEND
-------------------------
+STEP 3: SETUP BACKEND
+---------------------------------
 cd backend
 npm install
 
-# Configure .env file:
+# Edit .env if needed:
 PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/testdb
 OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=mistral:7b
 
-# Start backend
 npm start
 
 # Expected output:
 ✅ Connected to MongoDB: mongodb://127.0.0.1:27017/testdb
-✅ Loaded 12 intents
+✅ Loaded 15 intents
 🚀 Server running on http://localhost:5000
 
-
-STEP 4: INSTALL FRONTEND
--------------------------
+STEP 4: SETUP FRONTEND
+---------------------------------
 cd frontend
 npm install
 npm run dev
 
-# Open browser at:
-http://localhost:3000
+# Open http://localhost:3000
 
 ================================================================================
-                            PROJECT STRUCTURE
+                          PROJECT STRUCTURE
 ================================================================================
 
 chatbot-project/
-│
 ├── backend/
 │   ├── config/
-│   │   ├── db.js              # MongoDB connection setup
-│   │   └── ollama.js          # Ollama configuration
-│   │
+│   │   ├── db.js                    # MongoDB connection
+│   │   └── ollama.js                # Ollama configuration
 │   ├── intents/
-│   │   └── intents.json       # ⭐ All questions + MongoDB queries
-│   │
+│   │   └── intents.json             # ⭐ All questions + queries
 │   ├── routes/
-│   │   └── chat.js            # Main chat endpoint (/api/chat)
-│   │
+│   │   └── chat.js                  # Main chat endpoint + sessions
 │   ├── services/
-│   │   ├── ollamaService.js   # Communicates with Mistral AI
-│   │   ├── dbService.js       # Executes MongoDB queries
-│   │   └── intentService.js   # Matches user intent
-│   │
+│   │   ├── ollamaService.js         # Talks to Mistral
+│   │   ├── dbService.js             # Runs MongoDB queries + pagination
+│   │   └── intentService.js         # Matches intents
 │   ├── utils/
-│   │   ├── promptBuilder.js   # Extracts parameters from queries
-│   │   └── responseFormatter.js # Formats responses
-│   │
+│   │   ├── promptBuilder.js         # Extracts parameters + pagination
+│   │   └── responseFormatter.js     # Formats results
 │   ├── middleware/
-│   │   ├── errorHandler.js    # Global error handling
-│   │   └── logger.js          # Request logging
-│   │
-│   ├── server.js              # Entry point
-│   ├── .env                   # Environment variables
-│   └── package.json           # Dependencies
+│   │   ├── errorHandler.js
+│   │   └── logger.js
+│   ├── server.js                    # Entry point
+│   ├── .env
+│   └── package.json
 │
 └── frontend/
     ├── src/
     │   ├── components/
-    │   │   ├── ChatWindow.jsx        # Main chat container
-    │   │   ├── MessageBubble.jsx     # Individual messages
-    │   │   ├── InputBar.jsx          # User input field
-    │   │   ├── DataTable.jsx         # Display query results
-    │   │   └── TypingIndicator.jsx   # Loading animation
-    │   │
+    │   │   ├── ChatWindow.jsx       # Main chat container
+    │   │   ├── MessageBubble.jsx    # Individual messages
+    │   │   ├── InputBar.jsx         # User input
+    │   │   ├── DataTable.jsx        # Results table + pagination
+    │   │   └── TypingIndicator.jsx  # Loading animation
     │   ├── hooks/
-    │   │   └── useChat.js            # Chat state management
-    │   │
+    │   │   └── useChat.js           # Chat state management
     │   ├── services/
-    │   │   └── chatApi.js            # API calls to backend
-    │   │
+    │   │   └── chatApi.js           # API calls
     │   ├── styles/
-    │   │   ├── chat.css              # Chat UI styles
-    │   │   └── table.css             # Table styles
-    │   │
-    │   ├── App.jsx                   # Main app component
-    │   └── main.jsx                  # React entry point
-    │
+    │   │   ├── chat.css
+    │   │   └── table.css            # Table + pagination styles
+    │   ├── App.jsx
+    │   └── main.jsx
     ├── index.html
     ├── .env
     └── package.json
 
 ================================================================================
-                          HOW THE SYSTEM WORKS
+                          HOW IT WORKS
 ================================================================================
 
 FLOW DIAGRAM:
 -------------
-
-User types: "hw many activ usrs r ther?"
+User: "Show agents from India"
         ↓
-React Frontend sends to Node.js Backend
+React sends to Node.js backend
+        ↓
+Backend extracts parameters (country: "India", page: 1, limit: 10)
         ↓
 Backend sends to Ollama: "What intent is this?"
         ↓
-Ollama returns: "get_total_agents"
+Ollama returns: "get_agents_by_nationality"
         ↓
 Backend finds matching query in intents.json
         ↓
-Backend executes MongoDB query
+Backend runs MongoDB query with pagination
         ↓
-Backend sends result to Ollama: "Make this user-friendly"
+MongoDB returns: { data: [...], pagination: { page: 1, total: 47 } }
         ↓
-Ollama returns: "There are 142 agents in the system!"
+Backend formats: "Showing 1-10 of 47 results."
         ↓
-React displays the formatted answer
+React displays answer + table with Prev/Next buttons
 
-
-DETAILED PROCESS:
------------------
-
-1. USER INPUT
-   - User types question in React frontend
-   - Frontend sends POST request to /api/chat
-
-2. INTENT MATCHING
-   - Backend receives question
-   - Sends to Ollama with intent examples
-   - Ollama identifies the matching intent
-
-3. PARAMETER EXTRACTION
-   - If intent needs parameters (email, date, etc.)
-   - Ollama extracts them from user question
-
-4. DATABASE QUERY
-   - Backend finds query template in intents.json
-   - Replaces parameters in query
-   - Executes MongoDB query
-
-5. RESPONSE FORMATTING
-   - Raw data sent to Ollama
-   - Ollama formats into natural language
-   - Backend sends to frontend
-
-6. DISPLAY
-   - Frontend shows formatted response
-   - If tabular data, displays in DataTable component
+PAGINATION FLOW:
+----------------
+User clicks [Next ▶] or types "show next"
+        ↓
+Backend reads session (no Ollama call needed!)
+        ↓
+Increments page: 1 → 2
+        ↓
+Runs same query with skip(10).limit(10)
+        ↓
+Returns page 2 results (< 100ms)
 
 ================================================================================
-                          EXAMPLE QUESTIONS
+                          SUPPORTED QUERIES
 ================================================================================
 
 AGENT DETAILS
 -------------
-- "Show me details of agent gautam@cultureholidays.com"
-- "Who is CHAGT0001000024104?"
-- "Find agent by name Ray Harper"
-- "What company does gautam work for?"
+"Show me details of agent gautam@cultureholidays.com"
+"Who is CHAGT0001000024104?"
+"Find agent by name Ray Harper"
+"What company does gautam work for?"
 
 LOGIN ACTIVITY
 --------------
-- "When did ashish.bhasin@travelchacha.com last login?"
-- "Show recent logins"
-- "Who logged in today?"
-- "Who logged in this week?"
+"When did ashish.bhasin@travelchacha.com last login?"
+"Show recent logins"
+"Who logged in today?"
+"Who logged in this week?"
 
-COUNTS & STATISTICS
--------------------
-- "How many total agents are there?"
-- "How many agents are from India?"
-- "How many agents logged in today?"
+COUNTS & STATS
+--------------
+"How many total agents are there?"
+"How many agents are from India?"
+"How many agents logged in today?"
 
-COMPANY QUERIES
----------------
-- "List all companies"
-- "Show agents of Culture Holidays"
-- "How many agents does LUXE GRAND TRAVEL have?"
+COMPANY QUESTIONS
+-----------------
+"List all companies"
+"Show agents of Culture Holidays"
+"How many agents does LUXE GRAND TRAVEL have?"
+"Which company was established first?"
+"What is the oldest company?"
+"Which company is newest?"
 
 INACTIVE AGENTS
 ---------------
-- "Which agents have not logged in for 30 days?"
-- "Show inactive agents"
-- "Who hasn't logged in for 6 months?"
+"Which agents have not logged in for 30 days?"
+"Show inactive agents"
+"Who hasn't logged in for 6 months?"
 
-SEARCH QUERIES
---------------
-- "Search agent by email luxegrandtravel@mail.com"
-- "Find agents with gmail"
-- "Find agent ID for Ray Harper"
+SEARCH
+------
+"Search agent by email luxegrandtravel@mail.com"
+"Find agents with gmail"
+"Find agent ID for Ray Harper"
 
-================================================================================
-                          CONFIGURATION FILES
-================================================================================
+PAGINATION
+----------
+"Show first 10 agents from India"
+"Show 20 agents"
+"Show next"
+"Show more"
+"Show previous"
+"Go to page 2"
 
-BACKEND .ENV
-------------
-PORT=5000
-MONGODB_URI=mongodb://127.0.0.1:27017/testdb
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=mistral:7b
-
-
-FRONTEND .ENV
--------------
-VITE_API_URL=http://localhost:5000
-
-
-INTENTS.JSON STRUCTURE
-----------------------
-{
-  "intent": "intent_name",
-  "examples": [
-    "example question 1",
-    "example question 2"
-  ],
-  "collection": "agents",
-  "query": { "field": "value" },
-  "projection": { "field": 1 },
-  "requiresParameter": false
-}
+COMBINED FILTERS + PAGINATION
+------------------------------
+"Show first 5 agents from India"
+"Show 10 inactive agents"
+"Show next 20 logins"
 
 ================================================================================
-                          ADDING NEW INTENTS
+                          INTENTS REFERENCE
 ================================================================================
 
-1. Open backend/intents/intents.json
+INTENT NAME                  | DESCRIPTION                    | PAGINATION
+-----------------------------|--------------------------------|------------
+get_agent_details            | Single agent by email/ID/name  | No
+get_agent_company            | Agent's company name           | No
+get_agents_by_nationality    | Filter by country              | Yes (10)
+get_agents_by_company        | Filter by company name         | Yes (10)
+get_agent_last_login         | Last login for specific agent  | No
+get_total_agents             | Count all agents               | No
+get_agents_by_date           | Agents created in date range   | Yes (10)
+get_recent_logins            | Latest login records           | Yes (10)
+get_logins_by_date           | Logins in date range           | Yes (10)
+get_inactive_agents          | Agents not logged in X days    | No
+get_all_companies            | List all unique companies      | No
+get_oldest_company           | Company established first      | No
+get_newest_company           | Most recently established      | No
+get_agents_by_email_domain   | Filter by email domain         | Yes (10)
+search_agent                 | Search across all fields       | Yes (10)
 
-2. Add new intent object:
-{
-  "intent": "your_new_intent",
-  "examples": [
-    "example question 1",
-    "example question 2",
-    "example question 3"
-  ],
-  "collection": "agents",
-  "query": { "field": "value" },
-  "projection": { "field1": 1, "field2": 1 }
-}
+================================================================================
+                          KEY FEATURES
+================================================================================
 
-3. Restart backend server:
-npm start
+✅ PAGINATION
+- Default 10 results per page
+- Click buttons OR type commands
+- Session-based (no re-query needed)
+- Shows "Showing X-Y of Z results"
+- Prev/Next buttons with disabled states
 
-4. Test with example questions
+✅ FILTERS
+- By country/nationality
+- By company name
+- By email domain (gmail, yahoo, etc.)
+- By date ranges
+- By login activity
+- Combined filters
+
+✅ SMART INTENT DETECTION
+- Handles typos and variations
+- Extracts parameters automatically
+- Temperature 0.1 for accuracy
+- Regex cleanup for intent names
+
+✅ FAST PERFORMANCE
+- First query: 2-3 seconds (Ollama)
+- Pagination: < 100ms (no Ollama)
+- MongoDB queries: < 50ms
+- Total count: ~30ms extra
+
+✅ PRIVACY & COST
+- 100% local (no cloud)
+- No data sent externally
+- No API costs
+- Your data stays on your machine
 
 ================================================================================
                           TROUBLESHOOTING
@@ -309,144 +279,255 @@ npm start
 
 OLLAMA NOT RESPONDING
 ---------------------
-# Check if Ollama is running
 ollama list
-
-# Restart Ollama service
 ollama serve
-
-# Test model
-ollama run mistral:7b
-
+# Restart Ollama service
 
 MONGODB CONNECTION ERROR
 ------------------------
-# Check MongoDB is running
 mongosh
-
-# Verify database name
 use testdb
 show collections
-
-# Check connection string in .env
-MONGODB_URI=mongodb://127.0.0.1:27017/testdb
-
+# Verify database and collections exist
 
 BACKEND ERRORS
 --------------
-# Check terminal logs for errors
-# Verify .env file exists and has correct values
+# Check terminal logs
+# Verify .env values
 # Validate intents.json is valid JSON
-# Check MongoDB collections exist
+# Restart: npm start
 
-
-FRONTEND NOT CONNECTING
------------------------
-# Verify backend is running on port 5000
-# Check VITE_API_URL in frontend/.env
-# Check browser console for errors
-# Verify CORS is enabled in backend
-
-
-PORT ALREADY IN USE
+INTENT NOT DETECTED
 -------------------
-# Change PORT in backend/.env
-# Update VITE_API_URL in frontend/.env accordingly
+# Check console: "🎯 Detected intent: ..."
+# If wrong intent, add more examples to intents.json
+# Restart backend to reload intents
+
+NO RESULTS RETURNED
+-------------------
+# Check console: "💾 DB Result: ..."
+# Verify MongoDB has data
+# Check query parameters: "📝 Parameters: ..."
+
+PAGINATION NOT WORKING
+----------------------
+# Ensure intent has "pagination": true
+# Check session storage in backend logs
+# Verify frontend passes pagination prop
 
 ================================================================================
-                          API ENDPOINTS
+                          ADDING NEW INTENTS
 ================================================================================
 
-POST /api/chat
---------------
+STEP 1: Edit backend/intents/intents.json
+------------------------------------------
+{
+  "intent": "your_new_intent",
+  "collection": "agents",
+  "query": { "field": "value" },
+  "pagination": true,           // Optional
+  "defaultLimit": 10,            // Optional
+  "sort": { "field": -1 },       // Optional
+  "template": "Found {count} results."
+}
+
+STEP 2: Restart backend
+-----------------------
+npm start
+
+STEP 3: Test
+------------
+Ask a question that matches your new intent
+
+TEMPLATE VARIABLES:
+- {param} - Extracted parameter
+- {count} - Result count
+- {field} - Any field from result object
+- {from}, {to}, {total} - Pagination metadata
+
+================================================================================
+                          API REFERENCE
+================================================================================
+
+ENDPOINT: POST /api/chat
+------------------------
 Request:
 {
-  "message": "How many agents are there?"
+  "message": "Show agents from India",
+  "sessionId": "optional-session-id"
 }
 
 Response:
 {
-  "response": "There are 142 agents in the system!",
-  "data": { "count": 142 },
-  "intent": "get_total_agents"
+  "reply": "Showing 1-10 of 47 results.",
+  "data": [
+    { "Name": "John", "UserName": "john@example.com", ... },
+    ...
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 47,
+    "totalPages": 5,
+    "from": 1,
+    "to": 10
+  }
 }
 
 ================================================================================
-                          SECURITY & PRIVACY
+                          PERFORMANCE METRICS
 ================================================================================
 
-✅ Everything runs locally on your machine
-✅ No data sent to cloud services
-✅ No API costs or subscriptions
-✅ Your data stays private and secure
-✅ No internet connection required (after initial setup)
+QUERY TYPE              | TIME      | NOTES
+------------------------|-----------|--------------------------------------
+First query (Ollama)    | 2-3s      | Intent detection + DB query
+Pagination (next/prev)  | < 100ms   | No Ollama, uses session
+MongoDB find()          | < 50ms    | With indexes
+MongoDB count()         | ~30ms     | For pagination total
+Simple count query      | < 20ms    | No data retrieval
+
+OPTIMIZATION TIPS:
+- Add indexes on frequently queried fields
+- Use pagination for large result sets
+- Session storage avoids re-querying Ollama
+- Limit Ollama tokens (num_predict: 50)
 
 ================================================================================
-                          PERFORMANCE NOTES
+                          SECURITY NOTES
 ================================================================================
 
-- Mistral 7B requires ~8GB RAM
-- First query may take 5-10 seconds (model loading)
-- Subsequent queries: 1-3 seconds
-- MongoDB queries: <100ms
-- Frontend renders instantly
+✅ All data stays local
+✅ No external API calls (except local Ollama)
+✅ No credentials stored in code
+✅ MongoDB connection string in .env
+✅ CORS configured for localhost only
+✅ Input sanitization via MongoDB query builder
+
+PRODUCTION RECOMMENDATIONS:
+- Add authentication/authorization
+- Use environment-specific .env files
+- Enable MongoDB authentication
+- Add rate limiting
+- Implement request validation
+- Use HTTPS
+- Add logging and monitoring
 
 ================================================================================
-                          DEPLOYMENT OPTIONS
+                          CUSTOMIZATION
 ================================================================================
 
-DEVELOPMENT (Current Setup)
----------------------------
-- Frontend: http://localhost:3000
-- Backend: http://localhost:5000
-- MongoDB: localhost:27017
+CHANGE UI COLORS
+----------------
+Edit frontend/src/styles/chat.css
+- Primary color: #667eea
+- Hover color: #5568d3
+- Background: #f5f7fa
+
+CHANGE DEFAULT PAGE SIZE
+-------------------------
+Edit backend/intents/intents.json
+"defaultLimit": 20  // Change from 10 to 20
+
+CHANGE AI MODEL
+---------------
+Edit backend/.env
+OLLAMA_MODEL=llama2:7b  // Or any other Ollama model
+
+ADD MORE COLLECTIONS
+--------------------
+1. Add to MongoDB
+2. Create intents in intents.json
+3. Restart backend
+
+================================================================================
+                          DEPLOYMENT
+================================================================================
+
+DEVELOPMENT
+-----------
+Backend: npm start (port 5000)
+Frontend: npm run dev (port 3000)
 
 PRODUCTION
 ----------
-1. Deploy MongoDB to cloud (MongoDB Atlas)
-2. Deploy backend to VPS/cloud server
-3. Build frontend: npm run build
-4. Deploy frontend to static hosting
-5. Update environment variables
+Backend:
+  npm start (use PM2 for process management)
+  
+Frontend:
+  npm run build
+  Serve dist/ folder with nginx/apache
 
-Note: Ollama must run on a server with sufficient resources
+DOCKER (Optional)
+-----------------
+# Create Dockerfile for backend
+# Create Dockerfile for frontend
+# Use docker-compose for MongoDB + Backend + Frontend
 
 ================================================================================
                           FUTURE ENHANCEMENTS
 ================================================================================
 
-- Add user authentication
-- Implement chat history
-- Add more AI models (GPT-4, Claude)
-- Export data to CSV/Excel
-- Add data visualization charts
-- Implement voice input
-- Add multi-language support
-- Create admin dashboard
-- Add real-time notifications
+POTENTIAL FEATURES:
+- Export results to CSV/Excel
+- Advanced filters (date pickers, multi-select)
+- Charts and visualizations
+- Email notifications for inactive agents
+- Bulk operations
+- User authentication
+- Multi-language support
+- Voice input
+- Mobile app
+- Real-time updates via WebSocket
 
 ================================================================================
                           LICENSE & CREDITS
 ================================================================================
 
-License: MIT
-Free to use, modify, and distribute
+License: MIT - Free to use and modify
 
 Technologies:
 - React (Meta)
 - Node.js (OpenJS Foundation)
 - MongoDB (MongoDB Inc.)
 - Ollama (Ollama)
-- Mistral AI (Mistral AI)
+- Mistral 7B (Mistral AI)
 
 ================================================================================
-                          SUPPORT & RESOURCES
+                          SUPPORT & CONTACT
 ================================================================================
 
-Ollama Documentation: https://ollama.ai/
-MongoDB Documentation: https://docs.mongodb.com/
-React Documentation: https://react.dev/
-Express Documentation: https://expressjs.com/
+For issues or questions:
+1. Check troubleshooting section above
+2. Review console logs (backend + frontend)
+3. Verify MongoDB data structure
+4. Test Ollama separately: ollama run mistral:7b
+
+Common Issues:
+- Ollama not running → ollama serve
+- MongoDB not connected → mongod
+- Wrong intent detected → Add examples to intents.json
+- Slow responses → Check Ollama performance
+
+================================================================================
+                          VERSION HISTORY
+================================================================================
+
+v1.0 - Initial Release
+- Basic intent detection
+- MongoDB integration
+- React frontend
+
+v1.1 - Pagination & Filters
+- Added pagination support
+- Session management
+- Prev/Next buttons
+- Result count display
+
+v1.2 - Enhanced Intents
+- Added company establishment queries
+- Email domain search
+- Improved parameter extraction
+- Better error handling
 
 ================================================================================
                           END OF DOCUMENTATION

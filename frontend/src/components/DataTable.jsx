@@ -1,4 +1,4 @@
-export default function DataTable({ data }) {
+export default function DataTable({ data, pagination, onPageChange }) {
     if (!data || data.length === 0) return null;
     
     const keys = Object.keys(data[0]);
@@ -17,6 +17,26 @@ export default function DataTable({ data }) {
                     ))}
                 </tbody>
             </table>
+            {pagination && (
+                <div className="pagination">
+                    <span>Showing {pagination.from}-{pagination.to} of {pagination.total}</span>
+                    <div className="pagination-buttons">
+                        <button 
+                            onClick={() => onPageChange('prev')} 
+                            disabled={pagination.page === 1}
+                        >
+                            ◀ Prev
+                        </button>
+                        <span>Page {pagination.page} of {pagination.totalPages}</span>
+                        <button 
+                            onClick={() => onPageChange('next')} 
+                            disabled={pagination.page >= pagination.totalPages}
+                        >
+                            Next ▶
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

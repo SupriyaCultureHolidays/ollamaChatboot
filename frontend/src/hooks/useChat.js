@@ -11,8 +11,8 @@ export const useChat = () => {
         
         setLoading(true);
         try {
-            const { reply, data } = await sendMessage(text);
-            const botMsg = { text: reply, sender: "bot", data, timestamp: new Date() };
+            const { reply, data, pagination } = await sendMessage(text);
+            const botMsg = { text: reply, sender: "bot", data, pagination, timestamp: new Date() };
             setMessages(prev => [...prev, botMsg]);
         } catch (error) {
             const errorMsg = { text: "Sorry, something went wrong.", sender: "bot", timestamp: new Date() };

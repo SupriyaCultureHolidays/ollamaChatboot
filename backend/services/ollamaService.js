@@ -2,35 +2,24 @@ import axios from "axios";
 import ollamaConfig from "../config/ollama.js";
 
 export const detectIntent = async (userMessage, intents) => {
-    const intentList = intents.map(i => `- ${i.intent}: ${i.examples[0]}`).join('\n');
+    const intentNames = intents.map(i => i.intent).join(', ');
     
-    const prompt = `You are an intent classifier. User asked: "${userMessage}"
+    const prompt = `You must respond with ONLY ONE of these exact intent names, nothing else:
+${intentNames}
 
-Available intents:
-${intentList}
+User question: "${userMessage}"
 
-Reply with ONLY the intent name, nothing else.`;
-
-    const response = await axios.post(`${ollamaConfig.url}/api/generate`, {
-        model: ollamaConfig.model,
-        prompt,
-        stream: false
-    });
-
-    return response.data.response.trim();
-};
-
-export const generateResponse = async (userMessage, dbResult) => {
-    const prompt = `User asked: "${userMessage}"
-Database returned: ${JSON.stringify(dbResult, null, 2)}
-
-Give a friendly, concise reply in 1-2 sentences.`;
+Respond with the exact intent name only:`;
 
     const response = await axios.post(`${ollamaConfig.url}/api/generate`, {
         model: ollamaConfig.model,
         prompt,
-        stream: false
+        stream: false,
+        options: {
+            temperature: 0.1,
+            num_predict: 50
+        }
     });
 
-    return response.data.response.trim();
+    return response.data.response.trim().split('\n')[0].replace(/[^a-z_]/g, '');
 };

@@ -27,11 +27,41 @@ export const executeQuery = async (intent, params = {}) => {
     if (params.startDate) query = JSON.parse(JSON.stringify(query).replace(/{startDate}/g, params.startDate));
     if (params.endDate) query = JSON.parse(JSON.stringify(query).replace(/{endDate}/g, params.endDate));
 
+    // Pagination setup
+    const page = params.page || 1;
+    const limit = params.limit || intent.defaultLimit || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination
+    const total = intent.pagination ? await collection.countDocuments(query) : 0;
+
     // Build query options
     const options = {};
     if (intent.projection) options.projection = intent.projection;
     if (intent.sort) options.sort = intent.sort;
-    if (intent.limit) options.limit = intent.limit;
+    if (intent.pagination) {
+        options.skip = skip;
+        options.limit = limit;
+    } else if (intent.limit) {
+        options.limit = intent.limit;
+    }
 
-    return await collection.find(query, options).toArray();
+    const results = await collection.find(query, options).toArray();
+
+    // Return with pagination metadata
+    if (intent.pagination) {
+        return {
+            data: results,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+                from: skip + 1,
+                to: Math.min(skip + limit, total)
+            }
+        };
+    }
+
+    return results;
 };
