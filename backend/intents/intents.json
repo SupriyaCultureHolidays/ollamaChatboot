@@ -10,7 +10,16 @@
     "collection": "agents",
     "query": { "$or": [{"UserName": "{param}"}, {"Name": {"$regex": "{param}", "$options": "i"}}] },
     "projection": { "Name": 1, "Comp_Name": 1, "UserName": 1 },
+    "limit": 1,
     "template": "{Name} works for {Comp_Name}."
+  },
+  {
+    "intent": "get_agent_nationality",
+    "collection": "agents",
+    "query": { "$or": [{"UserName": "{param}"}, {"Name": {"$regex": "{param}", "$options": "i"}}] },
+    "projection": { "Name": 1, "Nationality": 1 },
+    "limit": 1,
+    "template": "{Name} is from {Nationality}."
   },
   {
     "intent": "get_agents_by_nationality",
@@ -37,11 +46,93 @@
     "template": "{AGENTID} last logged in on {LOGINDATE}."
   },
   {
+    "intent": "get_login_history",
+    "collection": "agentlogins",
+    "query": { "AGENTID": "{param}" },
+    "sort": { "LOGINDATE": -1 },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_logins_today",
+    "collection": "agentlogins",
+    "query": { "LOGINDATE": {"$gte": "{startDate}"} },
+    "sort": { "LOGINDATE": -1 },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_logins_this_week",
+    "collection": "agentlogins",
+    "query": { "LOGINDATE": {"$gte": "{startDate}"} },
+    "sort": { "LOGINDATE": -1 },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_logins_this_month",
+    "collection": "agentlogins",
+    "query": { "LOGINDATE": {"$gte": "{startDate}"} },
+    "sort": { "LOGINDATE": -1 },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_last_login_agent",
+    "collection": "agentlogins",
+    "query": {},
+    "sort": { "LOGINDATE": -1 },
+    "limit": 1,
+    "template": "{AGENTID} was the last to login on {LOGINDATE}."
+  },
+  {
     "intent": "get_total_agents",
     "collection": "agents",
     "query": {},
     "count": true,
     "template": "There are {count} agents in total."
+  },
+  {
+    "intent": "count_agents_by_nationality",
+    "collection": "agents",
+    "query": { "Nationality": {"$regex": "{param}", "$options": "i"} },
+    "count": true,
+    "template": "There are {count} agents from {param}."
+  },
+  {
+    "intent": "count_agents_by_company",
+    "collection": "agents",
+    "query": { "Comp_Name": {"$regex": "{param}", "$options": "i"} },
+    "count": true,
+    "template": "{param} has {count} agents."
+  },
+  {
+    "intent": "count_logins_today",
+    "collection": "agentlogins",
+    "query": { "LOGINDATE": {"$gte": "{startDate}"} },
+    "count": true,
+    "template": "{count} agents logged in today."
+  },
+  {
+    "intent": "count_never_logged_in",
+    "collection": "agents",
+    "aggregate": [
+      { "$lookup": { "from": "agentlogins", "localField": "UserName", "foreignField": "AGENTID", "as": "logins" } },
+      { "$match": { "logins": { "$size": 0 } } },
+      { "$count": "total" }
+    ],
+    "template": "{count} agents have never logged in."
+  },
+  {
+    "intent": "count_total_companies",
+    "collection": "agents",
+    "query": {},
+    "distinct": "Comp_Name",
+    "template": "There are {count} companies registered."
   },
   {
     "intent": "get_agents_by_date",
@@ -75,9 +166,30 @@
     "aggregate": [
       { "$group": { "_id": "$AGENTID", "lastLogin": { "$max": "$LOGINDATE" } } },
       { "$match": { "lastLogin": { "$lt": "{dateThreshold}" } } },
-      { "$lookup": { "from": "agents", "localField": "_id", "foreignField": "UserName", "as": "agentInfo" } }
+      { "$lookup": { "from": "agents", "localField": "_id", "foreignField": "UserName", "as": "agentInfo" } },
+      { "$unwind": { "path": "$agentInfo", "preserveNullAndEmptyArrays": false } },
+      { "$project": { "AGENTID": "$_id", "lastLogin": 1, "Name": "$agentInfo.Name", "Comp_Name": "$agentInfo.Comp_Name" } }
     ],
+    "pagination": true,
+    "defaultLimit": 10,
     "template": "list"
+  },
+  {
+    "intent": "get_company_establishment",
+    "collection": "agents",
+    "query": { "Comp_Name": {"$regex": "{param}", "$options": "i"} },
+    "projection": { "Comp_Name": 1, "Date_establishment": 1 },
+    "limit": 1,
+    "template": "{Comp_Name} was established on {Date_establishment}."
+  },
+  {
+    "intent": "get_company_agent_created",
+    "collection": "agents",
+    "query": { "Comp_Name": {"$regex": "{param}", "$options": "i"} },
+    "projection": { "Name": 1, "Comp_Name": 1, "CreatedDate": 1 },
+    "sort": { "CreatedDate": 1 },
+    "limit": 1,
+    "template": "The first {Comp_Name} agent was created on {CreatedDate}."
   },
   {
     "intent": "get_oldest_company",
@@ -119,6 +231,22 @@
       {"Comp_Name": {"$regex": "{param}", "$options": "i"}},
       {"AgentID": {"$regex": "{param}", "$options": "i"}}
     ]},
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "search_agents_name_starts_with",
+    "collection": "agents",
+    "query": { "Name": {"$regex": "^{param}", "$options": "i"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "search_company_contains",
+    "collection": "agents",
+    "query": { "Comp_Name": {"$regex": "{param}", "$options": "i"} },
     "pagination": true,
     "defaultLimit": 10,
     "template": "list"

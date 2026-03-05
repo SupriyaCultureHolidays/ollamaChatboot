@@ -17,10 +17,12 @@ export default function InputBar({ onSend, disabled }) {
                 type="text" 
                 value={text} 
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Ask about agents, logins, companies..."
+                placeholder="💬 Ask about agents, logins, companies..."
                 disabled={disabled}
             />
-            <button type="submit" disabled={disabled || !text.trim()}>Send</button>
+            <button type="submit" disabled={disabled || !text.trim()}>
+                {disabled ? '⏳' : '🚀'} Send
+            </button>
         </form>
     );
 }

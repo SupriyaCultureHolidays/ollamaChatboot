@@ -1,4 +1,4 @@
-export const formatResult = (result, template) => {
+export const formatResult = (result, template, params = {}) => {
     if (!result) return "No results found.";
     
     // Paginated result
@@ -8,9 +8,18 @@ export const formatResult = (result, template) => {
         return `Showing ${from}-${to} of ${total} results.`;
     }
     
-    // Count
+    // Count with template
+    if (typeof result === "number" && template) {
+        let formatted = template.replace("{count}", result);
+        if (params.param) {
+            formatted = formatted.replace("{param}", params.param);
+        }
+        return formatted;
+    }
+    
+    // Count without template
     if (typeof result === "number") {
-        return template.replace("{count}", result);
+        return `Found ${result} results.`;
     }
     
     // Array of strings (distinct)
@@ -23,15 +32,43 @@ export const formatResult = (result, template) => {
         return "No results found.";
     }
     
-    // Array with single object - extract it
-    if (Array.isArray(result) && result.length === 1 && template !== "list") {
+    // Single object template - take first result from array
+    if (Array.isArray(result) && result.length > 0 && template === "single") {
+        return Object.entries(result[0])
+            .filter(([key]) => !key.startsWith('_'))
+            .map(([key, value]) => {
+                const label = key.replace(/_/g, ' ');
+                const val = value instanceof Date ? value.toLocaleDateString() : value;
+                return `${label}: ${val}`;
+            })
+            .join('\n');
+    }
+    
+    // Array with single object - extract it and format
+    if (Array.isArray(result) && result.length === 1 && template && template !== "list" && template !== "single") {
         return fillTemplate(template, result[0]);
     }
     
-    // Single object
-    if (!Array.isArray(result) && typeof result === "object") {
-        if (template === "single") return result;
+    // Array with multiple objects but has template - use first one
+    if (Array.isArray(result) && result.length > 1 && template && template !== "list" && template !== "single") {
+        return fillTemplate(template, result[0]);
+    }
+    
+    // Single object with template
+    if (!Array.isArray(result) && typeof result === "object" && template && template !== "single") {
         return fillTemplate(template, result);
+    }
+    
+    // Single object without template (template === "single")
+    if (!Array.isArray(result) && typeof result === "object" && template === "single") {
+        return Object.entries(result)
+            .filter(([key]) => !key.startsWith('_'))
+            .map(([key, value]) => {
+                const label = key.replace(/_/g, ' ');
+                const val = value instanceof Date ? value.toLocaleDateString() : value;
+                return `${label}: ${val}`;
+            })
+            .join('\n');
     }
     
     // Array of objects (list)

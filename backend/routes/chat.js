@@ -32,7 +32,7 @@ router.post("/chat", async (req, res, next) => {
             // Update session
             sessions[sessionId] = { ...session, page: params.page };
             
-            const reply = formatResult(dbResult, session.intent.template);
+            const reply = formatResult(dbResult, session.intent.template, params);
             return res.json({ 
                 reply, 
                 data: dbResult.data || dbResult,
@@ -68,11 +68,21 @@ router.post("/chat", async (req, res, next) => {
         }
         
         // Step 4: Format with template
-        const reply = formatResult(dbResult, intent.template);
+        const reply = formatResult(dbResult, intent.template, params);
+        
+        // Determine what data to send
+        let responseData = null;
+        if (dbResult.pagination) {
+            // Paginated results
+            responseData = dbResult.data;
+        } else if (Array.isArray(dbResult) && dbResult.length > 0 && typeof dbResult[0] === 'object') {
+            // Array of objects (show as table)
+            responseData = dbResult;
+        }
         
         res.json({ 
             reply, 
-            data: dbResult.data || (Array.isArray(dbResult) && dbResult.length > 3 ? dbResult : null),
+            data: responseData,
             pagination: dbResult.pagination
         });
         

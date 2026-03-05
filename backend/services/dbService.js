@@ -16,16 +16,55 @@ export const executeQuery = async (intent, params = {}) => {
 
     // Handle aggregation
     if (intent.aggregate) {
-        const pipeline = JSON.parse(JSON.stringify(intent.aggregate).replace(/{dateThreshold}/g, params.dateThreshold || new Date(Date.now() - 30*24*60*60*1000).toISOString()));
+        let pipelineStr = JSON.stringify(intent.aggregate);
+        if (params.dateThreshold) {
+            pipelineStr = pipelineStr.replace(/{dateThreshold}/g, params.dateThreshold);
+        }
+        const pipeline = JSON.parse(pipelineStr);
+        
+        // Handle count aggregation (for count_never_logged_in)
+        if (intent.template && intent.template.includes('{count}')) {
+            const results = await collection.aggregate(pipeline).toArray();
+            return results[0]?.total || 0;
+        }
+        
+        // Handle pagination for aggregation
+        if (intent.pagination) {
+            const page = params.page || 1;
+            const limit = params.limit || intent.defaultLimit || 10;
+            const skip = (page - 1) * limit;
+            
+            // Get total count
+            const countPipeline = [...pipeline, { $count: "total" }];
+            const countResult = await collection.aggregate(countPipeline).toArray();
+            const total = countResult[0]?.total || 0;
+            
+            // Add pagination to pipeline
+            pipeline.push({ $skip: skip }, { $limit: limit });
+            const results = await collection.aggregate(pipeline).toArray();
+            
+            return {
+                data: results,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit),
+                    from: skip + 1,
+                    to: Math.min(skip + limit, total)
+                }
+            };
+        }
+        
         return await collection.aggregate(pipeline).toArray();
     }
 
     // Replace parameters in query
-    let query = JSON.parse(JSON.stringify(intent.query).replace(/{param}/g, params.param || ""));
-    
-    // Handle date parameters
-    if (params.startDate) query = JSON.parse(JSON.stringify(query).replace(/{startDate}/g, params.startDate));
-    if (params.endDate) query = JSON.parse(JSON.stringify(query).replace(/{endDate}/g, params.endDate));
+    let queryStr = JSON.stringify(intent.query);
+    if (params.param) queryStr = queryStr.replace(/{param}/g, params.param);
+    if (params.startDate) queryStr = queryStr.replace(/{startDate}/g, params.startDate);
+    if (params.endDate) queryStr = queryStr.replace(/{endDate}/g, params.endDate);
+    const query = JSON.parse(queryStr);
 
     // Pagination setup
     const page = params.page || 1;
