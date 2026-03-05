@@ -175,6 +175,101 @@
     "template": "list"
   },
   {
+    "intent": "get_agents_never_logged_in",
+    "collection": "agents",
+    "aggregate": [
+      { "$lookup": { "from": "agentlogins", "localField": "UserName", "foreignField": "AGENTID", "as": "logins" } },
+      { "$match": { "logins": { "$size": 0 } } },
+      { "$project": { "Name": 1, "UserName": 1, "Comp_Name": 1, "CreatedDate": 1 } }
+    ],
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "count_agents_created_year",
+    "collection": "agents",
+    "query": { "CreatedDate": {"$gte": "{startDate}", "$lte": "{endDate}"} },
+    "count": true,
+    "template": "{count} agents were registered this year."
+  },
+  {
+    "intent": "count_agents_created_month",
+    "collection": "agents",
+    "query": { "CreatedDate": {"$gte": "{startDate}", "$lte": "{endDate}"} },
+    "count": true,
+    "template": "{count} agents were created in {monthYear}."
+  },
+  {
+    "intent": "get_agents_created_before",
+    "collection": "agents",
+    "query": { "CreatedDate": {"$lt": "{endDate}"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_agents_created_after",
+    "collection": "agents",
+    "query": { "CreatedDate": {"$gte": "{startDate}"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_agents_created_this_month",
+    "collection": "agents",
+    "query": { "CreatedDate": {"$gte": "{startDate}", "$lte": "{endDate}"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_agents_logged_in_year",
+    "collection": "agentlogins",
+    "query": { "LOGINDATE": {"$gte": "{startDate}", "$lte": "{endDate}"} },
+    "sort": { "LOGINDATE": -1 },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_companies_established_after",
+    "collection": "agents",
+    "query": { "Date_establishment": {"$gte": "{startDate}"} },
+    "distinct": "Comp_Name",
+    "template": "Found {count} companies established after {year}: {list}"
+  },
+  {
+    "intent": "get_companies_no_establishment",
+    "collection": "agents",
+    "query": { "$or": [{"Date_establishment": null}, {"Date_establishment": {"$exists": false}}] },
+    "distinct": "Comp_Name",
+    "template": "Found {count} companies with no establishment date: {list}"
+  },
+  {
+    "intent": "get_agents_missing_establishment",
+    "collection": "agents",
+    "query": { "$or": [{"Date_establishment": null}, {"Date_establishment": {"$exists": false}}] },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_agents_last_active_before",
+    "collection": "agentlogins",
+    "aggregate": [
+      { "$group": { "_id": "$AGENTID", "lastLogin": { "$max": "$LOGINDATE" } } },
+      { "$match": { "lastLogin": { "$lt": "{dateThreshold}" } } },
+      { "$lookup": { "from": "agents", "localField": "_id", "foreignField": "UserName", "as": "agentInfo" } },
+      { "$unwind": { "path": "$agentInfo", "preserveNullAndEmptyArrays": false } },
+      { "$project": { "AGENTID": "$_id", "lastLogin": 1, "Name": "$agentInfo.Name", "Comp_Name": "$agentInfo.Comp_Name" } }
+    ],
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
     "intent": "get_company_establishment",
     "collection": "agents",
     "query": { "Comp_Name": {"$regex": "{param}", "$options": "i"} },
@@ -247,6 +342,30 @@
     "intent": "search_company_contains",
     "collection": "agents",
     "query": { "Comp_Name": {"$regex": "{param}", "$options": "i"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "find_agent_id_by_name",
+    "collection": "agents",
+    "query": { "Name": {"$regex": "{param}", "$options": "i"} },
+    "projection": { "Name": 1, "AgentID": 1, "UserName": 1 },
+    "limit": 1,
+    "template": "{Name}'s Agent ID is {AgentID}."
+  },
+  {
+    "intent": "get_agents_with_gmail",
+    "collection": "agents",
+    "query": { "UserName": {"$regex": "gmail", "$options": "i"} },
+    "pagination": true,
+    "defaultLimit": 10,
+    "template": "list"
+  },
+  {
+    "intent": "get_agents_with_domain",
+    "collection": "agents",
+    "query": { "UserName": {"$regex": "{param}", "$options": "i"} },
     "pagination": true,
     "defaultLimit": 10,
     "template": "list"

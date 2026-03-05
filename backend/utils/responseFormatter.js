@@ -14,6 +14,12 @@ export const formatResult = (result, template, params = {}) => {
         if (params.param) {
             formatted = formatted.replace("{param}", params.param);
         }
+        if (params.monthYear) {
+            formatted = formatted.replace("{monthYear}", params.monthYear);
+        }
+        if (params.year) {
+            formatted = formatted.replace("{year}", params.year);
+        }
         return formatted;
     }
     
@@ -24,7 +30,11 @@ export const formatResult = (result, template, params = {}) => {
     
     // Array of strings (distinct)
     if (Array.isArray(result) && typeof result[0] === "string") {
-        return template.replace("{count}", result.length).replace("{list}", result.join(", "));
+        let formatted = template.replace("{count}", result.length).replace("{list}", result.join(", "));
+        if (params.year) {
+            formatted = formatted.replace("{year}", params.year);
+        }
+        return formatted;
     }
     
     // Empty array

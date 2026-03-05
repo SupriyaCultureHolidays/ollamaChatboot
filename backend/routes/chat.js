@@ -4,6 +4,7 @@ import { getIntents, findIntent } from "../services/intentService.js";
 import { executeQuery } from "../services/dbService.js";
 import { extractParameters } from "../utils/promptBuilder.js";
 import { formatResult } from "../utils/responseFormatter.js";
+import { matchIntentByKeywords, fixEmailDomainParam } from "../services/keywordMatcher.js";
 
 const router = express.Router();
 const sessions = {}; // In-memory session store
@@ -40,12 +41,18 @@ router.post("/chat", async (req, res, next) => {
             });
         }
         
-        // Step 1: Detect intent using Ollama
-        const intents = getIntents();
-        const detectedIntent = await detectIntent(message, intents);
-        console.log("🎯 Detected intent:", detectedIntent);
+        // Step 1: Try keyword matching first
+        let detectedIntent = matchIntentByKeywords(message);
+        console.log("🔍 Keyword match:", detectedIntent);
         
-        // Step 2: Find matching intent
+        // Step 2: If no keyword match, use Ollama
+        if (!detectedIntent) {
+            const intents = getIntents();
+            detectedIntent = await detectIntent(message, intents);
+            console.log("🎯 Ollama detected intent:", detectedIntent);
+        }
+        
+        // Step 3: Find matching intent
         const intent = findIntent(detectedIntent);
         if (!intent) {
             return res.json({ 
@@ -54,7 +61,12 @@ router.post("/chat", async (req, res, next) => {
             });
         }
         
-        // Step 3: Execute database query
+        // Fix email domain parameter if needed
+        if (intent.intent === 'get_agents_by_email_domain' && params.param) {
+            params.param = fixEmailDomainParam(params.param);
+        }
+        
+        // Step 4: Execute database query
         const dbResult = await executeQuery(intent, params);
         console.log("💾 DB Result:", dbResult);
         
@@ -67,7 +79,7 @@ router.post("/chat", async (req, res, next) => {
             };
         }
         
-        // Step 4: Format with template
+        // Step 5: Format with template
         const reply = formatResult(dbResult, intent.template, params);
         
         // Determine what data to send

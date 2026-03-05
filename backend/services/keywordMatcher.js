@@ -18,6 +18,11 @@ export const matchIntentByKeywords = (userMessage) => {
         return 'get_agent_nationality';
     }
     
+    // Agent ID lookup
+    if (msg.includes('agent id for') || msg.includes('find agent id')) {
+        return 'find_agent_id_by_name';
+    }
+    
     // Count Queries
     if (msg.includes('how many')) {
         if (msg.includes('total agents')) return 'get_total_agents';
@@ -25,7 +30,9 @@ export const matchIntentByKeywords = (userMessage) => {
         if (msg.includes('agents does') || msg.includes('agents has')) return 'count_agents_by_company';
         if (msg.includes('logged in today')) return 'count_logins_today';
         if (msg.includes('never logged in')) return 'count_never_logged_in';
-        if (msg.includes('companies')) return 'count_total_companies';
+        if (msg.includes('companies') || msg.includes('total companies')) return 'count_total_companies';
+        if (msg.includes('registered this year') || msg.includes('created this year')) return 'count_agents_created_year';
+        if (msg.includes('created in')) return 'count_agents_created_month';
     }
     
     // Agents by Country
@@ -83,8 +90,34 @@ export const matchIntentByKeywords = (userMessage) => {
     
     // Inactive Agents
     if ((msg.includes('not logged in') || msg.includes('inactive')) && 
-        (msg.includes('30 days') || msg.includes('6 months'))) {
+        (msg.includes('30 days') || msg.includes('6 months') || msg.includes('1 year'))) {
         return 'get_inactive_agents';
+    }
+    
+    // Never logged in agents
+    if (msg.includes('never logged in') && !msg.includes('how many')) {
+        return 'get_agents_never_logged_in';
+    }
+    
+    // Agents created before/after dates
+    if (msg.includes('agents created before') || msg.includes('created before')) {
+        return 'get_agents_created_before';
+    }
+    if (msg.includes('agents created after') || msg.includes('created after')) {
+        return 'get_agents_created_after';
+    }
+    if (msg.includes('agents created this month') || msg.includes('created this month')) {
+        return 'get_agents_created_this_month';
+    }
+    
+    // Agents logged in specific year
+    if ((msg.includes('logged in') || msg.includes('login')) && msg.includes('2025')) {
+        return 'get_agents_logged_in_year';
+    }
+    
+    // Last active before date
+    if (msg.includes('last active before') || msg.includes('active before')) {
+        return 'get_agents_last_active_before';
     }
     
     // Company Establishment
@@ -100,6 +133,21 @@ export const matchIntentByKeywords = (userMessage) => {
     // Oldest Company
     if (msg.includes('oldest company') || msg.includes('established first')) {
         return 'get_oldest_company';
+    }
+    
+    // Companies established after date
+    if (msg.includes('companies established after')) {
+        return 'get_companies_established_after';
+    }
+    
+    // Companies with no establishment date
+    if (msg.includes('companies with no establishment') || msg.includes('missing establishment')) {
+        return 'get_companies_no_establishment';
+    }
+    
+    // Agents with missing establishment date
+    if (msg.includes('agents') && msg.includes('missing establishment')) {
+        return 'get_agents_missing_establishment';
     }
     
     // All Companies
@@ -134,8 +182,8 @@ export const matchIntentByKeywords = (userMessage) => {
 
 // Fix for email domain search
 export const fixEmailDomainParam = (param) => {
-    if (param === 'gmail') return 'gmail.com';
-    if (param === 'yahoo') return 'yahoo.com';
-    if (param === 'hotmail') return 'hotmail.com';
+    if (param && !param.includes('.')) {
+        return param + '.com';
+    }
     return param;
 };
