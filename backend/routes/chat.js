@@ -1,10 +1,9 @@
 import express from "express";
 import { detectIntent } from "../services/ollamaService.js";
-import { getIntents, findIntent } from "../services/intentService.js";
+import { getIntents, findIntent, matchKeywords } from "../services/intentService.js";
 import { executeQuery } from "../services/dbService.js";
 import { extractParameters } from "../utils/promptBuilder.js";
 import { formatResult } from "../utils/responseFormatter.js";
-import { matchIntentByKeywords, fixEmailDomainParam } from "../services/keywordMatcher.js";
 
 const router = express.Router();
 const sessions = {}; // In-memory session store
@@ -41,12 +40,15 @@ router.post("/chat", async (req, res, next) => {
             });
         }
         
-        // Step 1: Try keyword matching first
-        let detectedIntent = matchIntentByKeywords(message);
-        console.log("🔍 Keyword match:", detectedIntent);
+        // Step 1: Try keyword matching first (0ms)
+        const keywordMatch = matchKeywords(message);
+        let detectedIntent = null;
         
-        // Step 2: If no keyword match, use Ollama
-        if (!detectedIntent) {
+        if (keywordMatch.isInstant) {
+            detectedIntent = keywordMatch.intent;
+            console.log(`⚡ Instant match: ${detectedIntent} (${keywordMatch.confidence}% confidence)`);
+        } else {
+            // Step 2: Use Ollama for complex queries (2-3sec)
             const intents = getIntents();
             detectedIntent = await detectIntent(message, intents);
             console.log("🎯 Ollama detected intent:", detectedIntent);
@@ -63,7 +65,10 @@ router.post("/chat", async (req, res, next) => {
         
         // Fix email domain parameter if needed
         if (intent.intent === 'get_agents_by_email_domain' && params.param) {
-            params.param = fixEmailDomainParam(params.param);
+            // Extract domain from email or use as-is
+            if (params.param.includes('@')) {
+                params.param = params.param.split('@')[1];
+            }
         }
         
         // Step 4: Execute database query
